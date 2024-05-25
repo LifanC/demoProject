@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.project.server.Mapper.DemoMapper">
+    <resultMap id="Demo" type="com.project.server.Model.Demo">
+        <id property="product_id" column="ProductId"/>
+        <id property="product_name" column="ProductName"/>
+        <id property="timestamp" column="Timestamp"/>
+        <id property="price" column="Price"/>
+        <id property="converted_date" column="ConvertedDate"/>
+    </resultMap>
+    <select id="select" resultMap="Demo">
+        select Product.ProductID,
+               Product.ProductName,
+               ProductPrice.Timestamp,
+               ProductPrice.Price,
+               ProductPrice.ConvertedDate
+        from demo.Product,
+             (select ProductPrice.ProductID,
+                     ProductPrice.Timestamp,
+                     ProductPrice.Price,
+                     FROM_UNIXTIME(ProductPrice.Timestamp / 1000) as ConvertedDate
+              from demo.ProductPrice) as ProductPrice
+        where demo.Product.ProductID = ProductPrice.ProductID
+          and demo.Product.ProductID = #{productID}
+          and ConvertedDate like CONCAT(#{outputDateStr}, '%')
+    </select>
+    <update id="put">
+        update demo.ProductPrice
+        set Price = #{price}
+        where ProductID = #{productID}
+          and FROM_UNIXTIME(Timestamp / 1000) like CONCAT(#{outputDateStr}, '%')
+    </update>
+    <insert id="insert">
+        insert into demo.ProductPrice(Timestamp,
+                                      Price,
+                                      ProductID)
+        values (UNIX_TIMESTAMP(#{convertedDate}) * 1000,
+                #{price},
+                #{productID})
+    </insert>
+    <delete id="delete">
+        delete
+        from demo.ProductPrice
+        where ProductID = #{productID}
+          and FROM_UNIXTIME(Timestamp / 1000) like CONCAT(#{outputDateStr}, '%')
+    </delete>
+</mapper>
